@@ -281,8 +281,6 @@ void next_token(state *s) {
                     case '/': s->type = TOK_INFIX; s->function = divide; break;
                     case '^': s->type = TOK_INFIX; s->function = pow; break;
                     case '%': s->type = TOK_INFIX; s->function = fmod; break;
-                    /* inclusao do operador fatorial unario*/
-                    case '!': s->type = TOK_INFIX; s->function = fac;break;
                     case '(': s->type = TOK_OPEN; break;
                     case ')': s->type = TOK_CLOSE; break;
                     case ',': s->type = TOK_SEP; break;
@@ -309,11 +307,6 @@ static te_expr *base(state *s) {
             ret = new_expr(TE_CONSTANT, 0);
             ret->value = s->value;
             next_token(s);
-            /*if(s->function==fac){ inclusao do operador fatorial unario*/
-/*      			ret = NEW_EXPR(TE_FUNCTION1|TE_FLAG_PURE,ret);*/
-/*      			ret->function=fac;*/
-/*      			next_token(s);*/
-/*      	    }*/
             break;
 
         case TOK_VARIABLE:
@@ -334,7 +327,7 @@ static te_expr *base(state *s) {
                     s->type = TOK_ERROR;
                 } else {
                     next_token(s);
-               }
+                }
             }
             break;
 
@@ -474,26 +467,16 @@ static te_expr *factor(state *s) {
 }
 #endif
 
-static te_expr *factorial(state *s){
-    te_expr *ret = factor(s);
-    
-	while (s->type == TOK_INFIX && s->function == fac){
-		te_fun2 t = s->function;
-		next_token(s);
-		ret = NEW_EXPR(TE_FUNCTION1 | TE_FLAG_PURE,ret);
-		ret->function = t;
-	}
-    return ret;
-}
+
 
 static te_expr *term(state *s) {
     /* <term>      =    <factor> {("*" | "/" | "%") <factor>} */
-    te_expr *ret = factorial(s);
+    te_expr *ret = factor(s);
 
     while (s->type == TOK_INFIX && (s->function == mul || s->function == divide || s->function == fmod)) {
         te_fun2 t = s->function;
         next_token(s);
-	ret = NEW_EXPR(TE_FUNCTION2 | TE_FLAG_PURE,ret,factorial(s));
+        ret = NEW_EXPR(TE_FUNCTION2 | TE_FLAG_PURE, ret, factor(s));
         ret->function = t;
     }
 
